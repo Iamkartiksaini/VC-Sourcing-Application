@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+import { ACTIVE_MODEL, API_KEY } from "@/lib/server-const";
+
+const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 export async function POST(req: NextRequest) {
     try {
@@ -11,8 +13,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "input is required" }, { status: 400 });
         }
 
-        if (!process.env.GEMINI_API_KEY) {
-            return NextResponse.json({ error: "GEMINI_API_KEY not configured" }, { status: 500 });
+        if (!API_KEY) {
+            return NextResponse.json({ error: "AI not available" }, { status: 500 });
         }
 
         let contentToAnalyze = input;
@@ -44,7 +46,7 @@ export async function POST(req: NextRequest) {
     ${contentToAnalyze}`;
 
         const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
+            model: ACTIVE_MODEL,
             contents: prompt,
             config: {
                 responseMimeType: "application/json",
@@ -72,6 +74,9 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(parsed);
 
     } catch (err) {
+        if (err?.status === "RESOURCE_EXHAUSTED") {
+            return NextResponse.json({ error: "Resource exhausted" }, { status: 429 });
+        }
         console.error("Extract API error:", err);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }

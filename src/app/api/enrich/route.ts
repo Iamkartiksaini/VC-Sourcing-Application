@@ -3,8 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenAI } from "@google/genai";
 import dbConnect from "@/lib/db";
 import CompanyEnrichment from "@/models/CompanyEnrichment";
+import { ACTIVE_MODEL, API_KEY } from "@/lib/server-const";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 const INVESTMENT_THESIS = `
 We are an early-stage VC fund focused on:
@@ -68,8 +69,13 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with exactly
 }`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: ACTIVE_MODEL,
       contents: prompt,
+      config: {
+        tools: [
+          { googleSearch: {} },
+        ]
+      }
     });
 
     const rawText = response.text ?? "";
@@ -103,6 +109,9 @@ Respond ONLY with a valid JSON object (no markdown, no code blocks) with exactly
 
     return NextResponse.json(enrichmentData);
   } catch (err) {
+    if (err?.status === "RESOURCE_EXHAUSTED") {
+      return NextResponse.json({ error: "Resource exhausted" }, { status: 429 });
+    }
     console.error("Enrich API error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }

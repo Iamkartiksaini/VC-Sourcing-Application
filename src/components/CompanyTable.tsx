@@ -37,12 +37,13 @@ export function CompanyTable({ companies, onExport, onAddToList }: CompanyTableP
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showExportMenu, setShowExportMenu] = useState(false);
 
-  const sorted = [...companies].sort((a, b) => {
-    const av = a[sortKey] ?? 0;
-    const bv = b[sortKey] ?? 0;
-    const cmp = typeof av === "string" ? av.localeCompare(bv as string) : (av as number) - (bv as number);
-    return sortDir === "asc" ? cmp : -cmp;
-  });
+  const sorted = companies;
+  // const sorted = [...companies].sort((a, b) => {
+  //   const av = a[sortKey] ?? 0;
+  //   const bv = b[sortKey] ?? 0;
+  //   const cmp = typeof av === "string" ? av.localeCompare(bv as string) : (av as number) - (bv as number);
+  //   return sortDir === "asc" ? cmp : -cmp;
+  // });
 
   const totalPages = Math.ceil(sorted.length / PAGE_SIZE);
   const paginated = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
